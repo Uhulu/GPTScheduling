@@ -78,7 +78,18 @@ def sjf_preemptive_scheduler(processes, total_runtime):
         current_time += 1
 
     # Print final time
-    timeline.append(f"Finished at time {total_runtime}")
+    timeline.append(f"Finished at time {current_time}\n")
+
+    # Append the processes that did not finish if any
+    for process in processes:
+        if process.status != "finished":
+            timeline.append(f"{process.name} did not finish")
+
+    # Include wait, turnaround, and response times in the output
+    for process in processes:
+        timeline.append(f"{process.name} wait {waiting_times.get(process.name, 0)} "
+                      f"turnaround {turnaround_times.get(process.name, 0)} "
+                      f"response {response_times.get(process.name, 0)}")
 
     # Return all the recorded details
     return {
@@ -92,11 +103,18 @@ def sjf_preemptive_scheduler(processes, total_runtime):
 
 # Example usage
 processes = [
-    Process("A", 0, 5),
-    Process("B", 1, 4),
-    Process("C", 4, 2)
+    Process("P1", 0, 5),
+    Process("P2", 5, 9),
+    Process("P3", 9, 3),
+    Process("P4", 10, 4),
+    Process("P5", 11, 8),
+    Process("P6", 12, 4),
+    Process("P7", 18, 5),
+    Process("P8", 25, 4),
+    Process("P9", 30, 7),
+    Process("P10", 34, 10)
 ]
-total_runtime = 20
+total_runtime = 60
 result = sjf_preemptive_scheduler(processes, total_runtime)
 
 # Print the timeline of events
