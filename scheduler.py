@@ -21,6 +21,7 @@ def parse_input(filename):
     process_count = None
     run_for = None
     scheduling_algorithm = None
+    quantum = None
 
     try:
         with open(filename, 'r') as f:
@@ -37,6 +38,8 @@ def parse_input(filename):
             run_for = int(line.split()[1])
         elif line.startswith("use"):
             scheduling_algorithm = line.split()[1]
+        elif line.startswith("quantum"):
+            quantum = int(line.split()[1])
         elif line.startswith("process"):
             parts = line.split()
             name = parts[2]
@@ -50,7 +53,7 @@ def parse_input(filename):
         print("Error: Missing parameters.")
         sys.exit(1)
 
-    return processes, run_for, scheduling_algorithm
+    return processes, run_for, scheduling_algorithm, quantum
 
 def round_robin_scheduling(processes, run_for, quantum):
     output = [f"{len(processes)} processes", f"Using Round-Robin", f"Quantum   {quantum}\n"]
@@ -188,10 +191,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     input_file = sys.argv[1]
-    processes, run_for, scheduling_algorithm = parse_input(input_file)
+    processes, run_for, scheduling_algorithm, quantum = parse_input(input_file)
 
     if scheduling_algorithm == "rr":
-        quantum = 2  # Default quantum for Round Robin
+        if quantum == None:
+            quantum = 2  # Default quantum for Round Robin
         round_robin_scheduling(processes, run_for, quantum)
     elif scheduling_algorithm == "fcfs":
         fcfs_scheduling(processes, run_for)
