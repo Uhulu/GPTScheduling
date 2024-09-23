@@ -134,5 +134,4 @@ queue.enqueue(process_i)
 queue.enqueue(process_j)
 
 
-# Run the simulation for a total time of 25 units
 queue.run(total_time=55)
