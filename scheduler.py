@@ -229,10 +229,21 @@ def sjf_preemptive_scheduler(processes, total_runtime):
             if p.arrival_time <= current_time and p.remaining_time > 0
         ]
 
-        # Log arrival of processes at current time
+        # Log arrival of processes at current time (First)
         for p in processes:
             if p.arrival_time == current_time:
                 timeline.append(f"Time {current_time:>3} : {p.name} arrived")
+
+        # If a process finished during the last time unit, log its completion (Second)
+        if last_selected_process and last_selected_process.remaining_time == 0:
+            timeline.append(f"Time {current_time:>3} : {last_selected_process.name} finished")
+            turnaround_times[last_selected_process.name] = (
+                current_time - last_selected_process.arrival_time
+            )
+            waiting_times[last_selected_process.name] = (
+                turnaround_times[last_selected_process.name] - last_selected_process.burst_time
+            )
+            last_selected_process = None  # Reset the last selected process
 
         # If no process is available, the CPU is idle
         if not available_processes:
@@ -240,7 +251,7 @@ def sjf_preemptive_scheduler(processes, total_runtime):
             current_time += 1
             continue
 
-        # Select the process with the shortest remaining burst time
+        # Select the process with the shortest remaining burst time (Third)
         shortest_job = min(available_processes, key=lambda p: p.remaining_time)
 
         # Check if this process is different from the last selected process
@@ -255,24 +266,13 @@ def sjf_preemptive_scheduler(processes, total_runtime):
         if shortest_job.start_time is None:
             shortest_job.start_time = current_time
             shortest_job.response_time = current_time - shortest_job.arrival_time
-            
+
         # Execute the selected process for one time unit
         shortest_job.remaining_time -= 1
 
-        # Check if the process has finished executing
-        if shortest_job.remaining_time == 0:
-            timeline.append(f"Time {current_time + 1:>3} : {shortest_job.name} finished")
-            turnaround_times[shortest_job.name] = (
-                current_time + 1 - shortest_job.arrival_time
-            )
-            waiting_times[shortest_job.name] = (
-                turnaround_times[shortest_job.name] - shortest_job.burst_time
-            )
-            last_selected_process = None  # Reset the last selected process
-
         # Increment the time unit by 1
         current_time += 1
-    
+
     # Append the finish time along with the final statistics
     timeline.append(f"Finished at time {current_time}\n")
     for p in processes:
