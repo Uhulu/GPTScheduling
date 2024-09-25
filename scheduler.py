@@ -273,8 +273,16 @@ def sjf_preemptive_scheduler(processes, total_runtime):
         # Increment the time unit by 1
         current_time += 1
 
-    # Append the finish time along with the final statistics
+    # Append the finish time
     timeline.append(f"Finished at time {current_time}\n")
+
+    # Append processes that didn't finish
+    unfinished_processes = [p for p in processes if p.remaining_time > 0]
+    if unfinished_processes:
+        for p in unfinished_processes:
+            timeline.append(f"{p.name} did not finish")
+
+    # Append the final metrics
     for p in processes:
         timeline.append(
             f"{p.name} wait {waiting_times.get(p.name, 0):>3}"
