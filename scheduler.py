@@ -1,3 +1,9 @@
+# Matthew Itskovich
+# Luke Knowles
+# Julian Nutovits
+# Jesuel Rosado Arroyo
+# Elizabeth Teter
+
 import sys
 
 
@@ -61,17 +67,24 @@ def parse_input(filename):
 
 
 def round_robin_scheduling(processes, run_for, quantum):
-    output = [
+    output = [[
         f"{len(processes)} processes",
         f"Using Round-Robin",
         f"Quantum   {quantum}\n",
-    ]
+    ],
+    [
+        f"## {len(processes)} processes",
+        f"## Using Round-Robin",
+        f"## Quantum   {quantum}\n",
+        "| **Time** | **Process** | **Action** |",
+        "|:-:|:-:|:-:|"
+    ]]
 
     time = 0
     queue = []
     arrived_processes = set()
 
-    while time < run_for or queue:
+    while time < run_for:
         new_arrivals = [
             p
             for p in processes
@@ -79,7 +92,8 @@ def round_robin_scheduling(processes, run_for, quantum):
         ]
         for p in new_arrivals:
             arrived_processes.add(p.name)
-            output.append(f"Time {time:3} : {p.name} arrived")
+            output[0].append(f"Time {time:3} : {p.name} arrived")
+            output[1].append(f"| {time:3} | `{p.name}` | arrived |")
             queue.append(p)
 
         if queue:
@@ -89,8 +103,11 @@ def round_robin_scheduling(processes, run_for, quantum):
                 current_process.response_time = time - current_process.arrival_time
 
             time_slice = min(quantum, current_process.remaining_time)
-            output.append(
+            output[0].append(
                 f"Time {time:3} : {current_process.name} selected (burst {current_process.remaining_time:3})"
+            )
+            output[1].append(
+                f"| {time:3} | `{current_process.name}` | selected (burst {current_process.remaining_time:3}) |"
             )
             current_process.remaining_time -= time_slice
             time += time_slice
@@ -102,13 +119,15 @@ def round_robin_scheduling(processes, run_for, quantum):
                     and p.name not in arrived_processes
                 ):
                     arrived_processes.add(p.name)
-                    output.append(f"Time {p.arrival_time:3} : {p.name} arrived")
+                    output[0].append(f"Time {p.arrival_time:3} : {p.name} arrived")
+                    output[1].append(f"| {p.arrival_time:3} | `{p.name}` | arrived |")
                     queue.append(p)
 
             if current_process.remaining_time > 0:
                 queue.append(current_process)
             else:
-                output.append(f"Time {time:3} : {current_process.name} finished")
+                output[0].append(f"Time {time:3} : {current_process.name} finished")
+                output[1].append(f"| {time:3} | `{current_process.name}` | **finished** |")
                 current_process.end_time = time
                 current_process.turnaround_time = (
                     current_process.end_time - current_process.arrival_time
@@ -117,23 +136,38 @@ def round_robin_scheduling(processes, run_for, quantum):
                     current_process.turnaround_time - current_process.burst_time
                 )
         else:
-            output.append(f"Time {time:3} : Idle")
+            output[0].append(f"Time {time:3} : Idle")
+            output[1].append(f"| {time:3} | N/A | Idle |")
             time += 1
 
-    output.append(f"Finished at time  {time}\n")
+    output[0].append(f"Finished at time  {time}\n")
+    output[1].append(f"\n**Finished at time  {time}**\n")
+    output[1].append("## Times\n| **Process** | **Wait** | **Turnaround** | **Response** |\n|:-:|:-:|:-:|:-:|")
+    unfinished = []
+    
     for p in processes:
         if p.end_time is not None:
-            output.append(
+            output[0].append(
                 f"{p.name} wait {p.wait_time:3} turnaround {p.turnaround_time:3} response {p.response_time:3}"
             )
+            output[1].append(
+                f"| `{p.name}` | {p.wait_time:3} | {p.turnaround_time:3} | {p.response_time:3} |"
+            )
         else:
-            output.append(f"{p.name} did not finish")
+            output[0].append(f"{p.name} did not finish")
+            unfinished.append(f"`{p.name}` _did not finish_")
+    
+    output[1].append("")
+    for p in unfinished:
+        output[1].append(p)
 
     return output
 
 
 def fcfs_scheduling(processes, total_time):
-    output = [f"{len(processes)} processes", "Using First-Come First-Served\n"]
+    output = [[f"{len(processes)} processes", "Using First-Come First-Served\n"],
+              [f"## {len(processes)} processes", "## Using First-Come First-Served\n", "| **Time** | **Process** | **Action** |",
+        "|:-:|:-:|:-:|"]]
 
     current_time = 0
     waiting_queue = []
@@ -145,7 +179,8 @@ def fcfs_scheduling(processes, total_time):
         # Check for new arrivals at the current time
         for process in processes:
             if process.arrival_time == current_time and process not in waiting_queue:
-                output.append(f"Time {current_time:>3} : {process.name} arrived")
+                output[0].append(f"Time {current_time:>3} : {process.name} arrived")
+                output[1].append(f"| {current_time:>3} | `{process.name}` | arrived |")
                 waiting_queue.append(process)
 
         if waiting_queue:
@@ -156,20 +191,28 @@ def fcfs_scheduling(processes, total_time):
                     current_time - current_process.arrival_time
                 )
 
-            output.append(
+            output[0].append(
                 f"Time {current_time:>3} : {current_process.name} selected (burst {current_process.burst_time:>3})"
+            )
+            output[1].append(
+                f"| {current_time:>3} | `{current_process.name}` | selected (burst {current_process.burst_time:>3}) |"
             )
             current_time += current_process.burst_time
 
-            # Log finishing the current process
-            output.append(f"Time {current_time:>3} : {current_process.name} finished")
-            current_process.end_time = current_time
-            current_process.turnaround_time = (
-                current_process.end_time - current_process.arrival_time
-            )
-            current_process.wait_time = (
-                current_process.turnaround_time - current_process.burst_time
-            )
+            if current_time <= total_time:
+                # Log finishing the current process
+                output[0].append(f"Time {current_time:>3} : {current_process.name} finished")
+                output[1].append(f"| {current_time:>3} | `{current_process.name}` | **finished** |")
+                current_process.end_time = current_time
+                current_process.turnaround_time = (
+                    current_process.end_time - current_process.arrival_time
+                )
+                current_process.wait_time = (
+                    current_process.turnaround_time - current_process.burst_time
+                )
+            else:
+                waiting_queue.append(current_process)
+                current_time = total_time
 
             # Check for new arrivals during the process execution
             for process in processes:
@@ -178,29 +221,45 @@ def fcfs_scheduling(processes, total_time):
                     and process.arrival_time <= current_time
                     and process not in waiting_queue
                 ):
-                    output.append(
+                    output[0].append(
                         f"Time {process.arrival_time:>3} : {process.name} arrived"
+                    )
+                    output[1].append(
+                        f"| {process.arrival_time:>3} | `{process.name}` | arrived |"
                     )
                     waiting_queue.append(process)
         else:
-            output.append(f"Time {current_time:>3} : Idle")
+            output[0].append(f"Time {current_time:>3} : Idle")
+            output[1].append(f"| {current_time:>3} | N/A | Idle |")
             current_time += 1
 
     # Handle any remaining idle time until total_time
     while current_time < total_time:
-        output.append(f"Time {current_time:>3} : Idle")
+        output[0].append(f"Time {current_time:>3} : Idle")
+        output[1].append(f"| {current_time:>3} | N/A | Idle |")
         current_time += 1
 
-    output.append(f"Finished at time {current_time}\n")
+    output[0].append(f"Finished at time {current_time}\n")
+    output[1].append(f"\n**Finished at time {current_time}**\n")
+    output[1].append("## Times\n| **Process** | **Wait** | **Turnaround** | **Response** |\n|:-:|:-:|:-:|:-:|")
 
     # Generate final statistics for each process in alphabetical order
     for p in sorted(processes, key=lambda x: x.name):
-        wait_time = p.wait_time if p.wait_time is not None else 0
-        turnaround_time = p.turnaround_time if p.turnaround_time is not None else 0
-        response_time = p.response_time if p.response_time is not None else 0
-        output.append(
-            f"{p.name} wait {wait_time:>3} turnaround {turnaround_time:>3} response {response_time:>3}"
-        )
+        if not waiting_queue.__contains__(p):
+            wait_time = p.wait_time if p.wait_time is not None else 0
+            turnaround_time = p.turnaround_time if p.turnaround_time is not None else 0
+            response_time = p.response_time if p.response_time is not None else 0
+            output[0].append(
+                f"{p.name} wait {wait_time:>3} turnaround {turnaround_time:>3} response {response_time:>3}"
+            )
+            output[1].append(
+                f"| `{p.name}` | {wait_time:>3} | {turnaround_time:>3} | {response_time:>3} |"
+            )
+    
+    output[1].append("")
+    for p in sorted(waiting_queue, key=lambda x: x.name):
+        output[0].append(f"{p.name} did not finish")
+        output[1].append(f"`{p.name}` _did not finish_")
 
     return output
 
@@ -210,7 +269,9 @@ def sjf_preemptive_scheduler(processes, total_runtime):
     current_time = 0
 
     # Timeline where information about each process will be appended to
-    timeline = [f"{len(processes)} processes", "Using Preemptive Shortest Job First"]
+    timeline = [[f"{len(processes)} processes", "Using Preemptive Shortest Job First"],
+                [f"## {len(processes)} processes", "## Using Preemptive Shortest Job First", "| **Time** | **Process** | **Action** |",
+        "|:-:|:-:|:-:|"]]
 
     # Keep track of the waiting times
     waiting_times = {}
@@ -229,36 +290,31 @@ def sjf_preemptive_scheduler(processes, total_runtime):
             if p.arrival_time <= current_time and p.remaining_time > 0
         ]
 
-        # Log arrival of processes at current time (First)
+        # Log arrival of processes at current time
         for p in processes:
             if p.arrival_time == current_time:
-                timeline.append(f"Time {current_time:>3} : {p.name} arrived")
-
-        # If a process finished during the last time unit, log its completion (Second)
-        if last_selected_process and last_selected_process.remaining_time == 0:
-            timeline.append(f"Time {current_time:>3} : {last_selected_process.name} finished")
-            turnaround_times[last_selected_process.name] = (
-                current_time - last_selected_process.arrival_time
-            )
-            waiting_times[last_selected_process.name] = (
-                turnaround_times[last_selected_process.name] - last_selected_process.burst_time
-            )
-            last_selected_process = None  # Reset the last selected process
+                timeline[0].append(f"Time {current_time:>3} : {p.name} arrived")
+                timeline[1].append(f"| {current_time:>3} | `{p.name}` | arrived |")
 
         # If no process is available, the CPU is idle
         if not available_processes:
-            timeline.append(f"Time {current_time:>3} : Idle")
+            timeline[0].append(f"Time {current_time:>3} : Idle")
+            timeline[1].append(f"| {current_time:>3} | N/A | Idle |")
             current_time += 1
             continue
 
-        # Select the process with the shortest remaining burst time (Third)
+        # Select the process with the shortest remaining burst time
         shortest_job = min(available_processes, key=lambda p: p.remaining_time)
 
         # Check if this process is different from the last selected process
         if last_selected_process != shortest_job:
-            timeline.append(
+            timeline[0].append(
                 f"Time {current_time:>3} : {shortest_job.name} selected "
                 f"(burst {shortest_job.remaining_time})"
+            )
+            timeline[1].append(
+                f"| {current_time:>3} | `{shortest_job.name}` | selected "
+                f"(burst {shortest_job.remaining_time}) |"
             )
             last_selected_process = shortest_job
 
@@ -266,20 +322,40 @@ def sjf_preemptive_scheduler(processes, total_runtime):
         if shortest_job.start_time is None:
             shortest_job.start_time = current_time
             shortest_job.response_time = current_time - shortest_job.arrival_time
-
+            
         # Execute the selected process for one time unit
         shortest_job.remaining_time -= 1
 
+        # Check if the process has finished executing
+        if shortest_job.remaining_time == 0:
+            timeline[0].append(f"Time {current_time + 1:>3} : {shortest_job.name} finished")
+            timeline[1].append(f"| {current_time + 1:>3} | `{shortest_job.name}` | **finished** |")
+            turnaround_times[shortest_job.name] = (
+                current_time + 1 - shortest_job.arrival_time
+            )
+            waiting_times[shortest_job.name] = (
+                turnaround_times[shortest_job.name] - shortest_job.burst_time
+            )
+            last_selected_process = None  # Reset the last selected process
+
         # Increment the time unit by 1
         current_time += 1
-
+    
     # Append the finish time along with the final statistics
-    timeline.append(f"Finished at time {current_time}\n")
+    timeline[0].append(f"Finished at time {current_time}\n")
+    timeline[1].append(f"\n**Finished at time {current_time}**\n")
+    timeline[1].append("## Times\n| **Process** | **Wait** | **Turnaround** | **Response** |\n|:-:|:-:|:-:|:-:|")
+    
     for p in processes:
-        timeline.append(
+        timeline[0].append(
             f"{p.name} wait {waiting_times.get(p.name, 0):>3}"
             f" turnaround {turnaround_times.get(p.name, 0):>3}"
             f" response {p.response_time if p.response_time is not None else 0:>3}"
+        )
+        timeline[1].append(
+            f"| `{p.name}` | {waiting_times.get(p.name, 0):>3}"
+            f" | {turnaround_times.get(p.name, 0):>3}"
+            f" | {p.response_time if p.response_time is not None else 0:>3} |"
         )
 
     # Return the contents of the timeline
@@ -289,11 +365,12 @@ def sjf_preemptive_scheduler(processes, total_runtime):
 print("hello")
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: scheduler.py <input file>")
+        print("Usage: scheduler-gpt.py <input file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
     output_file = input_file.replace(".in", ".out")
+    output_file_md = input_file.replace(".in", ".md")
 
     processes, run_for, scheduling_algorithm, quantum = parse_input(input_file)
 
@@ -311,7 +388,12 @@ if __name__ == "__main__":
 
     # Write output to the .out file
     with open(output_file, "w") as f:
-        for line in output:
+        for line in output[0]:
+            f.write(line + "\n")
+    
+    # Write output to the .md file
+    with open(output_file_md, "w") as f:
+        for line in output[1]:
             f.write(line + "\n")
 
-    print(f"Output written to {output_file}")
+    print(f"Output written to {output_file} and {output_file_md}")
