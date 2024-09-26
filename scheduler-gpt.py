@@ -377,7 +377,7 @@ def sjf_preemptive_scheduler(processes, total_runtime):
 print("hello")
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: scheduler.py <input file>")
+        print("Usage: scheduler-gpt.py <input file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
