@@ -73,8 +73,8 @@ def round_robin_scheduling(processes, run_for, quantum):
         f"Quantum   {quantum}\n",
     ],
     [
-        f"**{len(processes)}** processes",
-        f"Using **Round-Robin**",
+        f"**{len(processes)}** processes  ", # for some reason new lines don't work on GitHub without spaces
+        f"Using **Round-Robin**  ",
         f"Quantum   **{quantum}**\n",
         "## Timeline",
         "| **Time** | **Process** | **Action** |",
@@ -167,7 +167,7 @@ def round_robin_scheduling(processes, run_for, quantum):
 
 def fcfs_scheduling(processes, total_time):
     output = [[f"{len(processes)} processes", "Using First-Come First-Served\n"],
-              [f"**{len(processes)}** processes", "Using **First-Come First-Served**\n",
+              [f"**{len(processes)}** processes  ", "Using **First-Come First-Served**\n",
                "## Timeline", "| **Time** | **Process** | **Action** |", "|:-:|:-:|:-:|"]]
 
     current_time = 0
@@ -271,7 +271,7 @@ def sjf_preemptive_scheduler(processes, total_runtime):
 
     # Timeline where information about each process will be appended to
     timeline = [[f"{len(processes)} processes", "Using Preemptive Shortest Job First"],
-                [f"**{len(processes)}** processes", "Using **Preemptive Shortest Job First**",
+                [f"**{len(processes)}** processes  ", "Using **Preemptive Shortest Job First**",
                 "## Timeline", "| **Time** | **Process** | **Action** |", "|:-:|:-:|:-:|"]]
 
     # Keep track of the waiting times

@@ -1,5 +1,5 @@
-**10** processes
-Using **Round-Robin**
+**10** processes  
+Using **Round-Robin**  
 Quantum   **3**
 
 ## Timeline
