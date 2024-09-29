@@ -104,7 +104,7 @@ def parse_input(filename):
             elif line.startswith("process"):
 
                 parts = line.split()
-                if len(parts) != 7 or parts[1] != "name" or parts[3] != "arrival" or parts[5] != "burst":
+                if parts[1] != "name" or parts[3] != "arrival" or parts[5] != "burst":
                     raise ValueError(f"Malformed process information.")
                 name = parts[2]
                 arrival = int(parts[4])
