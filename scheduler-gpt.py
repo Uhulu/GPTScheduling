@@ -33,6 +33,12 @@ def parse_input(filename):
     scheduling_algorithm = None
     quantum = None
 
+    # Error handling for missing input file argument
+    if not filename:
+        print("Error: No input file provided.")
+        sys.exit(1)
+
+    # Error handling for file not found
     try:
         with open(filename, "r") as f:
             lines = f.readlines()
@@ -40,27 +46,91 @@ def parse_input(filename):
         print(f"Error: Input file '{filename}' not found.")
         sys.exit(1)
 
-    for line in lines:
-        line = line.strip()
-        if line.startswith("processcount"):
-            process_count = int(line.split()[1])
-        elif line.startswith("runfor"):
-            run_for = int(line.split()[1])
-        elif line.startswith("use"):
-            scheduling_algorithm = line.split()[1]
-        elif line.startswith("quantum"):
-            quantum = int(line.split()[1])
-        elif line.startswith("process"):
-            parts = line.split()
-            name = parts[2]
-            arrival = int(parts[4])
-            burst = int(parts[6])
-            processes.append(Process(name, arrival, burst))
-        elif line.startswith("end"):
-            break
 
+    # Parse the file
+    try:
+
+        for line in lines:
+            line = line.strip()
+
+            if line.startswith("processcount"):
+
+               parts = line.split()
+               if len(parts) < 2:
+                    raise ValueError("Missing parameter process count.")
+               try:
+                    process_count = int(parts[1])
+                    if process_count <= 0:
+                        raise ValueError("Process count must be a positive integer.")
+               except ValueError:
+                    raise ValueError(f"Missing parameter process count.")
+
+            elif line.startswith("runfor"):
+
+               parts = line.split()
+               if len(parts) < 2:
+                    raise ValueError("Missing parameter run for.")
+
+               try:
+                    run_for = int(line.split()[1])
+                    if run_for <= 0:
+                        raise ValueError("Run time must be a positive integer.")
+               except ValueError:
+                    raise ValueError(f"Missing parameter run for.")
+
+            elif line.startswith("use"):
+
+                 parts = line.split()
+                 if len(parts) < 2:
+                    raise ValueError("Missing scheduling algorithm after 'use'.")
+                 scheduling_algorithm = parts[1].lower()
+                 if scheduling_algorithm not in ["fcfs", "sjf", "rr"]:
+                    raise ValueError(f"Invalid scheduling algorithm: {scheduling_algorithm}. Use 'fcfs', 'sjf', or 'rr'.")
+            
+
+            elif line.startswith("quantum"):
+
+                parts = line.split()
+                if len(parts) < 2:
+                    raise ValueError("Missing parameter quantum.")
+                try:
+                    quantum = int(line.split()[1])
+                    if quantum <= 0:
+                        raise ValueError("Quantum must be a positive integer.")
+                except ValueError:
+                    raise ValueError(f"Missing parameter quantum.")
+
+
+            elif line.startswith("process"):
+
+                parts = line.split()
+                if len(parts) != 7 or parts[1] != "name" or parts[3] != "arrival" or parts[5] != "burst":
+                    raise ValueError(f"Malformed process information.")
+                name = parts[2]
+                arrival = int(parts[4])
+                burst = int(parts[6])
+                if arrival < 0 or burst <= 0:
+                    raise ValueError(f"Malformed process information.")
+                processes.append(Process(name, arrival, burst))
+
+            elif line.startswith("end"):
+                break
+
+    except (ValueError, IndexError) as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    # Check if all required parameters are present
     if process_count is None or run_for is None or scheduling_algorithm is None:
-        print("Error: Missing parameters.")
+        print("Error: Missing required parameters (processcount, runfor, use).")
+        sys.exit(1)
+
+    if scheduling_algorithm == "rr" and quantum is None:
+        print("Error: Missing quantum for round-robin scheduling.")
+        sys.exit(1)
+
+    if len(processes) != process_count:
+        print(f"Error: Expected {process_count} processes, but found {len(processes)}.")
         sys.exit(1)
 
     return processes, run_for, scheduling_algorithm, quantum
@@ -374,7 +444,6 @@ def sjf_preemptive_scheduler(processes, total_runtime):
     return timeline
 
 
-print("hello")
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: scheduler-gpt.py <input file>")
@@ -387,8 +456,6 @@ if __name__ == "__main__":
     processes, run_for, scheduling_algorithm, quantum = parse_input(input_file)
 
     if scheduling_algorithm == "rr":
-        if quantum is None:
-            quantum = 2  # Default quantum for Round Robin
         output = round_robin_scheduling(processes, run_for, quantum)
     elif scheduling_algorithm == "fcfs":
         output = fcfs_scheduling(processes, run_for)
