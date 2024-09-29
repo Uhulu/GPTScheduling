@@ -137,30 +137,34 @@ def parse_input(filename):
 
 
 def round_robin_scheduling(processes, run_for, quantum):
+    # Initialize two separate outputs: one for a simple output format, the other for a Markdown format
     output = [[
-        f"{len(processes)} processes",
-        f"Using Round-Robin",
-        f"Quantum   {quantum}\n",
+        f"{len(processes)} processes",                # Number of processes
+        f"Using Round-Robin",                         # Indicates Round-Robin scheduling is being used
+        f"Quantum   {quantum}\n",                     # Time slice (quantum) for Round-Robin
     ],
     [
-        f"**{len(processes)}** processes  ", # for some reason new lines don't work on GitHub without spaces
-        f"Using **Round-Robin**  ",
-        f"Quantum   **{quantum}**\n",
-        "## Timeline",
-        "| **Time** | **Process** | **Action** |",
-        "|:-:|:-:|:-:|"
+        f"**{len(processes)}** processes  ",           # Markdown: Number of processes (bold formatting)
+        f"Using **Round-Robin**  ",                   # Markdown: Scheduling algorithm being used (bold formatting)
+        f"Quantum   **{quantum}**\n",                 # Markdown: Time slice (quantum) for Round-Robin (bold formatting)
+        "## Timeline",                                # Markdown: Section header for timeline
+        "| **Time** | **Process** | **Action** |",    # Markdown: Table header for time, process, and action
+        "|:-:|:-:|:-:|"                               # Markdown: Table alignment for center-aligned columns
     ]]
 
-    time = 0
-    queue = []
-    arrived_processes = set()
+    time = 0                                          # Global time counter
+    queue = []                                        # Queue to hold processes ready to run
+    arrived_processes = set()                         # Set to track which processes have arrived
 
+    # Main loop runs while the time is less than the total simulation time
     while time < run_for:
+        # Check for new arrivals at the current time
         new_arrivals = [
             p
             for p in processes
             if p.arrival_time == time and p.name not in arrived_processes
         ]
+        # Add new arrivals to the queue and mark them as arrived
         for p in new_arrivals:
             arrived_processes.add(p.name)
             output[0].append(f"Time {time:3} : {p.name} arrived")
@@ -168,11 +172,12 @@ def round_robin_scheduling(processes, run_for, quantum):
             queue.append(p)
 
         if queue:
-            current_process = queue.pop(0)
-            if current_process.start_time is None:
+            current_process = queue.pop(0)            # Get the first process in the queue
+            if current_process.start_time is None:    # If the process is running for the first time
                 current_process.start_time = time
                 current_process.response_time = time - current_process.arrival_time
 
+            # Calculate the time slice (quantum) or remaining burst time, whichever is smaller
             time_slice = min(quantum, current_process.remaining_time)
             output[0].append(
                 f"Time {time:3} : {current_process.name} selected (burst {current_process.remaining_time:3})"
@@ -180,9 +185,10 @@ def round_robin_scheduling(processes, run_for, quantum):
             output[1].append(
                 f"| {time:3} | `{current_process.name}` | selected (burst {current_process.remaining_time:3}) |"
             )
-            current_process.remaining_time -= time_slice
-            time += time_slice
+            current_process.remaining_time -= time_slice  # Decrease the remaining time by the time slice
+            time += time_slice                            # Advance the global time by the time slice
 
+            # Check for new arrivals during the time slice
             for p in processes:
                 if (
                     p.arrival_time > current_process.arrival_time
@@ -194,12 +200,13 @@ def round_robin_scheduling(processes, run_for, quantum):
                     output[1].append(f"| {p.arrival_time:3} | `{p.name}` | arrived |")
                     queue.append(p)
 
-            if current_process.remaining_time > 0:
-                queue.append(current_process)
+            if current_process.remaining_time > 0:     # If the process still has remaining burst time
+                queue.append(current_process)          # Re-add it to the end of the queue
             else:
                 output[0].append(f"Time {time:3} : {current_process.name} finished")
                 output[1].append(f"| {time:3} | `{current_process.name}` | **finished** |")
-                current_process.end_time = time
+                current_process.end_time = time        # Mark the process as finished
+                # Calculate turnaround time and wait time
                 current_process.turnaround_time = (
                     current_process.end_time - current_process.arrival_time
                 )
@@ -207,17 +214,21 @@ def round_robin_scheduling(processes, run_for, quantum):
                     current_process.turnaround_time - current_process.burst_time
                 )
         else:
+            # If there are no processes in the queue, the system is idle
             output[0].append(f"Time {time:3} : Idle")
             output[1].append(f"| {time:3} | N/A | Idle |")
-            time += 1
+            time += 1  # Increment the global time when idle
 
+    # After the scheduling ends
     output[0].append(f"Finished at time  {time}\n")
     output[1].append(f"\n**Finished at time  {time}**\n")
     output[1].append("## Metrics\n| **Process** | **Wait** | **Turnaround** | **Response** |\n|:-:|:-:|:-:|:-:|")
-    unfinished = []
-    
+
+    unfinished = []  # To track processes that did not finish
+    # Output metrics for each process
     for p in processes:
         if p.end_time is not None:
+            # Add the process's wait, turnaround, and response times to the output
             output[0].append(
                 f"{p.name} wait {p.wait_time:3} turnaround {p.turnaround_time:3} response {p.response_time:3}"
             )
@@ -225,14 +236,15 @@ def round_robin_scheduling(processes, run_for, quantum):
                 f"| `{p.name}` | {p.wait_time:3} | {p.turnaround_time:3} | {p.response_time:3} |"
             )
         else:
+            # If the process did not finish, note this in the output
             output[0].append(f"{p.name} did not finish")
             unfinished.append(f"`{p.name}` _did not finish_")
-    
-    output[1].append("")
+
+    output[1].append("")  # Add an empty line before unfinished processes
     for p in unfinished:
-        output[1].append(p)
-        
-    return output
+        output[1].append(p)  # Append unfinished processes to the markdown output
+
+    return output  # Return both text and markdown outputs
 
 
 def fcfs_scheduling(processes, total_time):
